@@ -764,6 +764,7 @@ namespace WeakCurrent1.Common
             }; //end of  fas
 
             //fas.DianWeiall等于以上所有属性数量总和
+            //待修正：火灾报警点位统计
             fas.DianWeiall = fas.ShouBao + fas.ShengGuang + 2 * fas.JuanLianA + fas.QieFei + fas.DianTi + fas.YanGan + fas.WenGan + fas.EXWenGan +
                 +fas.XiaoHuoShuan + fas.YaLiKG + fas.LiuLiangKG + fas.ShuiLiuZSQ + fas.XinHaofa +
                 3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + fas.WYB + fas.GP + 1 * fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC

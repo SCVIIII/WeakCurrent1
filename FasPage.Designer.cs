@@ -273,7 +273,7 @@ namespace WeakCurrent1
             // 
             // uiLine1
             // 
-            this.uiLine1.Font = new System.Drawing.Font("微软雅黑", 13F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.uiLine1.Font = new System.Drawing.Font("微软雅黑", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.uiLine1.LineColor2 = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(160)))), ((int)(((byte)(255)))));
             this.uiLine1.LineDashStyle = Sunny.UI.UILineDashStyle.Custom;
             this.uiLine1.LineSize = 2;
@@ -282,8 +282,8 @@ namespace WeakCurrent1
             this.uiLine1.Name = "uiLine1";
             this.uiLine1.Size = new System.Drawing.Size(799, 22);
             this.uiLine1.StyleCustomMode = true;
-            this.uiLine1.TabIndex = 9;
-            this.uiLine1.Text = "火灾自动报警系统";
+            this.uiLine1.TabIndex = 8;
+            this.uiLine1.Text = "火灾自动报警系统 问题反馈：17681999306@163.com";
             this.uiLine1.Click += new System.EventHandler(this.uiLine1_Click);
             // 
             // uiSB_GengXinBlk
