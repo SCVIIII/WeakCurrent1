@@ -824,7 +824,7 @@ namespace WeakCurrent1.Common
                                                              where d.GetAttributeInBlockReference("电井/防火分区") == Id_Dianjing
                                                              select d).ToList();
                                 //当主键有效且属性块唯一时进行修改
-                                if ((IdKey > 1000) && (listObjIds.Count == 1))
+                                if ( listObjIds.Count == 1)
                                 {
                                     //设置主键信息
                                     Dictionary<string, string> atts = new Dictionary<string, string>

@@ -244,11 +244,11 @@ namespace WeakCurrent1
                 //对list3中的每行进行处理
                 //添加预留变量list4，用于后续对list3的checkbox筛选
                 List<FASJiSuanshuExcel> listInsert = (from d in list1
-                                                      where d.IdKey < 1000 || !listKeys.Contains(d.IdKey)
+                                                      where !listKeys.Contains(d.IdKey)
                                                       select d).ToList();
 
                 List<FASJiSuanshuExcel> listUpdate = (from d in list1
-                                                      where d.IdKey > 1000 && listKeys.Contains(d.IdKey)
+                                                      where listKeys.Contains(d.IdKey)
                                                       select d).ToList();
 
                 

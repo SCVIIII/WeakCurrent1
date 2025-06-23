@@ -256,11 +256,11 @@ namespace WeakCurrent1
                 //对list3中的每行进行处理
                 //添加预留变量list4，用于后续对list3的checkbox筛选
                 List<AnFangClass> listInsert = (from d in list1
-                                                      where d.IdKey < 1000 || !listKeys.Contains(d.IdKey)
+                                                      where !listKeys.Contains(d.IdKey)
                                                       select d).ToList();
 
                 List<AnFangClass> listUpdate = (from d in list1
-                                                      where d.IdKey > 1000 && listKeys.Contains(d.IdKey)
+                                                      where listKeys.Contains(d.IdKey)
                                                       select d).ToList();
 
                 //连接SQLite
@@ -1200,7 +1200,7 @@ namespace WeakCurrent1
             if (list1.Count > 0)
             {
                 List<int> listDeleteIDKey = (from d in list1
-                                                where d.IdKey > 1000 && listKeys.Contains(d.IdKey)
+                                                where listKeys.Contains(d.IdKey)
                                                 select d.IdKey).ToList();
                 // 构建包含行 IDKEY 的字符串
                 string idsString = string.Join(",", listDeleteIDKey);
