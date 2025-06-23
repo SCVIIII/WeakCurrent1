@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Autodesk.AutoCAD.ApplicationServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Colors;
-
-using MySql.Data;
-using MySql.Data.MySqlClient;
-using System.Windows.Forms;
 using Sunny.UI;
-
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
+using System.Data.SQLite;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Documents;
+using System.Windows.Forms;
+using System.Xml;
 
 namespace WeakCurrent1.Common
 {
@@ -259,25 +258,19 @@ namespace WeakCurrent1.Common
         /// <param name="conn"></param>
         /// <param name="database"></param>
         /// <returns></returns>
-        public static List<int> AnFangSQLGetIdKeys(MySqlConnection conn, string database)
+        public static List<int> AnFangSQLGetIdKeys()
         {
             //创建返回值列表
             List<int> listKey = new List<int>();
-            string table = database + ".anfangtable";
-            //连接MySQL
-            if (conn.State == ConnectionState.Closed)
-            {
-                conn.Open();
-            }
-
+            
             //主函数
-            try
+            using(var conn=new SQLiteConnection(SQLiteConn.ConnSQLite()))
             {
                 //SQL查询指令
-                string sql1 = "SELECT IdKey FROM " + table;
+                string sql1 = "SELECT IdKey FROM anfangtable " ;
                 //查询当前防火分区对应的主键
-                MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                MySqlDataReader rdr = cmd.ExecuteReader();
+                var cmd = new SQLiteCommand(sql1, conn);
+                var rdr = cmd.ExecuteReader();
                 //将结果rdr转换为list
                 while (rdr.Read())
                 {
@@ -286,22 +279,18 @@ namespace WeakCurrent1.Common
                     listKey.Add(IdKey);
                 }
                 rdr.Close();
+                return listKey;
+            } // end of using
+            {
+                
+
             } // end of try
 
-            //异常处理
-            catch (System.Exception ex)
-            {
-                Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(ex.ToString());
-            } //end of catch
-            //关闭数据普库连接
-            conn.Close();
-            //返回值
-            return listKey;
         } // end of GetIdKeys
 
 
         //新建行信息,并插入数据库
-        public static bool AnFangAddToSQL(MySqlConnection conn, string databasename, List<AnFangClass> listInsert)
+        public static bool AnFangAddToSQL(List<AnFangClass> listInsert)
         {
 
             //当行内容有效时进行修改SQL
@@ -311,51 +300,43 @@ namespace WeakCurrent1.Common
                 //添加预留变量list4，用于后续对list3的checkbox筛选
                 List<AnFangClass> list4 = listInsert;
                 //表名
-                string table = databasename + ".anfangtable";
+                string table = "anfangtable";
 
-                //连接MySQL
-                if (conn.State == System.Data.ConnectionState.Closed)
+                using (var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
                 {
-                    conn.Open();
+                    // 对各行依次对SQL进行检索,检索条件: 电井编号
+                    for (int i = 0; i < list4.Count; i++)
+                    {
+
+                        //获取电井/防火分区号
+                        string Id_Dianjing = list4[i].Id_Dianjing;
+
+                        //SQL筛选条件
+                        string sql1 =
+                        "SELECT IdKey " +
+                        " FROM " + table +
+                        " WHERE Id_Dianjing =@Id_Dianjing";
+                        //" WHERE Id_Dianjing=" + Id_Dianjing;
+
+                        //获取IdKey
+                        var cmd = new SQLiteCommand(sql1, conn);
+                        cmd.Parameters.AddWithValue("@Id_Dianjing", Id_Dianjing);
+                        object result = cmd.ExecuteScalar();
+
+                        //当前电井/防火分区是否存在
+                        if (result == null) //此防火分区不存在
+                        {
+                            //插入第i行
+                            AnFangSQLAddRow(table, list4[i]);
+
+                        } //end of if
+                          //当防火分区重名时弹窗提示
+                        else
+                        {
+                            MessageBox.Show("此防火分区已存在,请复核: " + Id_Dianjing);
+                        }
+                    } //end of for
                 }
-
-
-                //对各行依次对SQL进行检索,检索条件:电井编号
-                for (int i = 0; i < list4.Count; i++)
-                {
-
-                    //获取电井/防火分区号
-                    string Id_Dianjing = list4[i].Id_Dianjing;
-
-                    //SQL筛选条件
-                    string sql1 =
-                    "SELECT IdKey " +
-                    " FROM " + table +
-                    " WHERE Id_Dianjing =@Id_Dianjing";
-                    //" WHERE Id_Dianjing=" + Id_Dianjing;
-
-                    //获取IdKey
-                    MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                    cmd.Parameters.AddWithValue("@Id_Dianjing", Id_Dianjing);
-                    object result = cmd.ExecuteScalar();
-
-                    //当前电井/防火分区是否存在
-                    if (result == null) //此防火分区不存在
-                    {
-                        //插入第i行
-                        AnFangSQLAddRow(conn, table, list4[i]);
-
-                    } //end of if
-                    //当防火分区重名时弹窗提示
-                    else
-                    {
-                        MessageBox.Show("此防火分区已存在,请复核: " + Id_Dianjing);
-                    }
-                } //end of for
-
-                //此批次数据处理全部完成后关闭数据库连接
-                conn.Close();
-
             } // end of if (count>0)
 
             return true;
@@ -368,75 +349,80 @@ namespace WeakCurrent1.Common
         /// <param name="conn"></param>
         /// <param name="table"></param>
         /// <param name="fasinfo"></param>
-        private static void AnFangSQLAddRow(MySqlConnection conn, string table, AnFangClass fasinfo)
+        private static void AnFangSQLAddRow(string table, AnFangClass fasinfo)
         {
+            //在SQL中插入行
+            using (var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
+            {
+                //插入行对应的MySQL命令
+                string sql_Insert =
+                    "INSERT INTO " + table +
 
-            //插入行对应的MySQL命令
-            string sql_Insert =
-                "INSERT INTO " + table +
-                
-                "( Id_Dianjing , Floor1, Floor2, " +
-                "JianKong_qiuji,JianKong_qiangji,JianKong_renlian,JianKong_shiwai,JianKong,XinXifabu," +
-                "NengHao,MenJinkongzhi,MenJin,XunGeng,WuZhangaihujiao," +
-                "RuQintance,gmt_create,DDC, " +
-                "YuLiu1,YuLiu2,YuLiu3,YuLiu4,YuLiu5,YuLiu6, " +
-                "DianWei , ONU_24 ,ONU_POE24," +
-                "ONU_GC24POE, FenGuangqi_216, AHD, AP ) " +
+                    "( Id_Dianjing , Floor1, Floor2, " +
+                    "JianKong_qiuji,JianKong_qiangji,JianKong_renlian,JianKong_shiwai,JianKong,XinXifabu," +
+                    "NengHao,MenJinkongzhi,MenJin,XunGeng,WuZhangaihujiao," +
+                    "RuQintance,gmt_create,DDC, " +
+                    "YuLiu1,YuLiu2,YuLiu3,YuLiu4,YuLiu5,YuLiu6, " +
+                    "DianWei , ONU_24 ,ONU_POE24," +
+                    "ONU_GC24POE, FenGuangqi_216, AHD, AP ) " +
 
-                "VALUES " +
-                "(@string2,@string3,@string4," +
-                "@string5,@string6,@string7,@string8,@string9,@string10," +
-                "@string11,@string12,@string13,@string14,@string15," +
-                "@string16,@string17,@string19," +
-                "@string20," +
-                "@string21,@string22,@string23,@string24,@string25, " +
-                "@string26,@string27,@string28, @string29, @string30, @string31, @string32)";
+                    "VALUES " +
+                    "(@string2,@string3,@string4," +
+                    "@string5,@string6,@string7,@string8,@string9,@string10," +
+                    "@string11,@string12,@string13,@string14,@string15," +
+                    "@string16,@string17,@string19," +
+                    "@string20," +
+                    "@string21,@string22,@string23,@string24,@string25, " +
+                    "@string26,@string27,@string28, @string29, @string30, @string31, @string32)";
 
+                //SQL语句中对应的变量
+                var cmd_Insert = new SQLiteCommand(sql_Insert, conn);
+                cmd_Insert.Parameters.AddWithValue("@string2", fasinfo.Id_Dianjing);
+                cmd_Insert.Parameters.AddWithValue("@string3", fasinfo.Floor1);
+                cmd_Insert.Parameters.AddWithValue("@string4", fasinfo.Floor2);
 
-            //SQL语句中对应的变量
-            MySqlCommand cmd_Insert = new MySqlCommand(sql_Insert, conn);
-            cmd_Insert.Parameters.AddWithValue("@string2", fasinfo.Id_Dianjing);
-            cmd_Insert.Parameters.AddWithValue("@string3", fasinfo.Floor1);
-            cmd_Insert.Parameters.AddWithValue("@string4", fasinfo.Floor2);
+                //5~10
+                cmd_Insert.Parameters.AddWithValue("@string5", fasinfo.JianKong_qiuji);
+                cmd_Insert.Parameters.AddWithValue("@string6", fasinfo.JianKong_qiangji);
+                cmd_Insert.Parameters.AddWithValue("@string7", fasinfo.JianKong_renlian);
+                cmd_Insert.Parameters.AddWithValue("@string8", fasinfo.JianKong_shiwai);
+                cmd_Insert.Parameters.AddWithValue("@string9", fasinfo.JianKong);
+                cmd_Insert.Parameters.AddWithValue("@string10", fasinfo.XinXifabu);
+                //11~15
+                cmd_Insert.Parameters.AddWithValue("@string11", fasinfo.NengHao);
+                cmd_Insert.Parameters.AddWithValue("@string12", fasinfo.MenJinkongzhi);
+                cmd_Insert.Parameters.AddWithValue("@string13", fasinfo.MenJin);
+                cmd_Insert.Parameters.AddWithValue("@string14", fasinfo.XunGeng);
+                cmd_Insert.Parameters.AddWithValue("@string15", fasinfo.WuZhangaihujiao);
 
-            //5~10
-            cmd_Insert.Parameters.AddWithValue("@string5", fasinfo.JianKong_qiuji);
-            cmd_Insert.Parameters.AddWithValue("@string6", fasinfo.JianKong_qiangji);
-            cmd_Insert.Parameters.AddWithValue("@string7", fasinfo.JianKong_renlian);
-            cmd_Insert.Parameters.AddWithValue("@string8", fasinfo.JianKong_shiwai);
-            cmd_Insert.Parameters.AddWithValue("@string9", fasinfo.JianKong);
-            cmd_Insert.Parameters.AddWithValue("@string10", fasinfo.XinXifabu);
-            //11~15
-            cmd_Insert.Parameters.AddWithValue("@string11", fasinfo.NengHao);
-            cmd_Insert.Parameters.AddWithValue("@string12", fasinfo.MenJinkongzhi);
-            cmd_Insert.Parameters.AddWithValue("@string13", fasinfo.MenJin);
-            cmd_Insert.Parameters.AddWithValue("@string14", fasinfo.XunGeng);
-            cmd_Insert.Parameters.AddWithValue("@string15", fasinfo.WuZhangaihujiao);
+                //16~19
+                cmd_Insert.Parameters.AddWithValue("@string16", fasinfo.RuQintance);
+                cmd_Insert.Parameters.AddWithValue("@string17", DateTime.Now.ToString("yy-MM-dd"));  //新建行时的日期
+                cmd_Insert.Parameters.AddWithValue("@string19", fasinfo.DDC);
 
-            //16~19
-            cmd_Insert.Parameters.AddWithValue("@string16", fasinfo.RuQintance);
-            cmd_Insert.Parameters.AddWithValue("@string17", DateTime.Now.ToString("yy-MM-dd"));  //新建行时的日期
-            cmd_Insert.Parameters.AddWithValue("@string19", fasinfo.DDC);
+                //20~25
+                cmd_Insert.Parameters.AddWithValue("@string20", fasinfo.YuLiu1);
+                cmd_Insert.Parameters.AddWithValue("@string21", fasinfo.YuLiu2);
+                cmd_Insert.Parameters.AddWithValue("@string22", fasinfo.YuLiu3);
+                cmd_Insert.Parameters.AddWithValue("@string23", fasinfo.YuLiu4);
+                cmd_Insert.Parameters.AddWithValue("@string24", fasinfo.YuLiu5);
+                cmd_Insert.Parameters.AddWithValue("@string25", fasinfo.YuLiu6);
 
-            //20~25
-            cmd_Insert.Parameters.AddWithValue("@string20", fasinfo.YuLiu1);
-            cmd_Insert.Parameters.AddWithValue("@string21", fasinfo.YuLiu2);
-            cmd_Insert.Parameters.AddWithValue("@string22", fasinfo.YuLiu3);
-            cmd_Insert.Parameters.AddWithValue("@string23", fasinfo.YuLiu4);
-            cmd_Insert.Parameters.AddWithValue("@string24", fasinfo.YuLiu5);
-            cmd_Insert.Parameters.AddWithValue("@string25", fasinfo.YuLiu6);
+                //26~28
+                cmd_Insert.Parameters.AddWithValue("@string26", fasinfo.DianWei);
+                cmd_Insert.Parameters.AddWithValue("@string27", fasinfo.ONU_24);
+                cmd_Insert.Parameters.AddWithValue("@string28", fasinfo.ONU_POE24);
 
-            //26~28
-            cmd_Insert.Parameters.AddWithValue("@string26", fasinfo.DianWei);
-            cmd_Insert.Parameters.AddWithValue("@string27", fasinfo.ONU_24);
-            cmd_Insert.Parameters.AddWithValue("@string28", fasinfo.ONU_POE24);
+                // 新添加的列
+                cmd_Insert.Parameters.AddWithValue("@string29", fasinfo.ONU_GC24POE);
+                cmd_Insert.Parameters.AddWithValue("@string30", fasinfo.FenGuangqi_216);
+                cmd_Insert.Parameters.AddWithValue("@string31", fasinfo.AHD);
+                cmd_Insert.Parameters.AddWithValue("@string32", fasinfo.AP);
+                cmd_Insert.ExecuteNonQuery();
 
-            // 新添加的列
-            cmd_Insert.Parameters.AddWithValue("@string29", fasinfo.ONU_GC24POE);
-            cmd_Insert.Parameters.AddWithValue("@string30", fasinfo.FenGuangqi_216);
-            cmd_Insert.Parameters.AddWithValue("@string31", fasinfo.AHD);
-            cmd_Insert.Parameters.AddWithValue("@string32", fasinfo.AP);
-            cmd_Insert.ExecuteNonQuery();
+            } // end of using
+
+            
         } // end of SQLInsertRow
         //插入行结束
 
@@ -449,7 +435,7 @@ namespace WeakCurrent1.Common
         /// <param name="ed"></param>
         /// <param name="database"></param>
         /// <param name="listInsert"></param>
-        public static void AnFangUpdateBlkKeys(MySqlConnection conn, Database db, Editor ed, string database, List<AnFangClass> listInsert)
+        public static void AnFangUpdateBlkKeys(Database db, Editor ed, List<AnFangClass> listInsert)
         {
             //主函数
             try
@@ -460,8 +446,6 @@ namespace WeakCurrent1.Common
                     //在CAD中自动选取防火分区信息的块
                     //图框对应的块名存放于此
                     List<string> listRDblk1 = new List<string>() { "RD-防火分区信息1" };
-                    //表名
-                    string table = database + ".anfangtable";
 
                     //筛选条件:块名
                     string rdblkNames1 = ARXTools.GetAnonymousBlk(db, listRDblk1);
@@ -491,7 +475,7 @@ namespace WeakCurrent1.Common
                             //查询主键
                             string Id_Dianjing = listInsert[i].Id_Dianjing;
                             string FLoor1 = listInsert[i].Floor1;
-                            int IdKey = AnFangQueryKey(conn, Id_Dianjing, table);
+                            int IdKey = AnFangQueryKey(Id_Dianjing);
 
                             //筛选出与电井编号相同的块
                             List<ObjectId> listObjIds = (from d in id_Info
@@ -601,149 +585,134 @@ namespace WeakCurrent1.Common
         /// <param name="Id_Dianjing"></param>
         /// <param name="name_table"></param>
         /// <returns></returns>
-        private static int AnFangQueryKey(MySqlConnection conn, string Id_Dianjing, string name_table)
+        private static int AnFangQueryKey(string Id_Dianjing)
         {
             int IdKey = 0;
-            //连接MySQL
-            if (conn.State == ConnectionState.Closed)
+
+            using (var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
             {
-                conn.Open();
-            }
-            if (true) //预留If
-            {
-                try
+
+                if (true) //预留If
                 {
+
                     //SQL查询指令
-                    string sql1 = "SELECT IdKey FROM " + name_table + " WHERE  Id_Dianjing=@string2";
+                    string sql1 = "SELECT IdKey FROM anfangtable WHERE  Id_Dianjing=@string2";
                     //查询当前防火分区对应的主键
-                    MySqlCommand cmd = new MySqlCommand(sql1, conn);
+                    var cmd = new SQLiteCommand(sql1, conn);
                     cmd.Parameters.AddWithValue("@string2", Id_Dianjing);
                     object result = cmd.ExecuteScalar();
                     IdKey = result.ToString().ToInt();
-                }
 
-                //异常处理
-                catch (System.Exception ex)
-                {
-                    Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(ex.ToString());
-                }
-            } //end of if true
-            //关闭数据库连接
-            conn.Close();
-            return IdKey;
+                } //end of if true
+                return IdKey;
+
+            } // end of using
+
+
         } // end of GetKey
 
 
         //修改SQL行信息
 
-        public static bool AnFangUpdateSQL(MySqlConnection conn, string database, List<AnFangClass> list3)
+        public static bool AnFangUpdateSQL(List<AnFangClass> list3)
         {
             if (list3.Count > 0)
             {
                 //对list3中的每行进行处理
                 //添加预留变量list4，用于后续对list3的checkbox筛选
                 List<AnFangClass> list4 = list3;
-                string table = database + ".anfangtable";
+                
 
-                //连接MySQL
-                if (conn.State == System.Data.ConnectionState.Closed)
+                using(var conn= new SQLiteConnection(SQLiteConn.ConnSQLite()))
                 {
-                    conn.Open();
-                }
-
-
-                //对各行依次对SQL进行检索,检索条件:电井编号
-                for (int i = 0; i < list4.Count; i++)
-                {
-
-                    //获取电井/防火分区号
-                    int IdKey = list4[i].IdKey;
-
-                    //SQL筛选条件
-                    string sql1 =
-                    "SELECT COUNT(*) " +
-                    " FROM " + table +
-                    " WHERE IdKey =@IdKey";
-                    //" WHERE Id_Dianjing=" + Id_Dianjing;
-
-                    //获取IdKey
-                    MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                    cmd.Parameters.AddWithValue("@IdKey", IdKey);
-                    object result = cmd.ExecuteScalar();
-
-                    //当前电井/防火分区是否存在
-                    if (result != null) //此防火分区 信息存在时,进行修改
+                    //对各行依次对SQL进行检索,检索条件:电井编号
+                    for (int i = 0; i < list4.Count; i++)
                     {
-                        //更新行对应的MySQL命令
-                        string sql_Update =
-                            "UPDATE " + table +
 
-                            " SET " +
-                            " Id_Dianjing=@string2 , Floor1=@string3,  Floor2=@string4, " +
+                        //获取电井/防火分区号
+                        int IdKey = list4[i].IdKey;
 
-                            "JianKong_qiuji=@string5, " +  //Id_Dianjing=@string2,
-                            "JianKong_qiangji=@string6, JianKong_renlian=@string7, JianKong_shiwai=@string8, JianKong=@string9, XinXifabu=@string10, " +
-                            "NengHao=@string11, MenJinkongzhi=@string12, MenJin=@string13, XunGeng=@string14, WuZhangaihujiao=@string15, " +
-                            "RuQintance=@string16, DDC=@string19, gmt_change=@string18, " +
+                        //SQL筛选条件
+                        string sql1 =
+                        "SELECT COUNT(*) " +
+                        " FROM anfangtable" +
+                        " WHERE IdKey =@IdKey";
+                        //" WHERE Id_Dianjing=" + Id_Dianjing;
+
+                        //获取IdKey
+                        var cmd = new SQLiteCommand(sql1, conn);
+                        cmd.Parameters.AddWithValue("@IdKey", IdKey);
+                        object result = cmd.ExecuteScalar();
+
+                        //当前电井/防火分区是否存在
+                        if (result != null) //此防火分区 信息存在时,进行修改
+                        {
+                            //更新行对应的MySQL命令
+                            string sql_Update =
+                                "UPDATE anfangtable"  +
+
+                                " SET " +
+                                " Id_Dianjing=@string2 , Floor1=@string3,  Floor2=@string4, " +
+
+                                "JianKong_qiuji=@string5, " +  //Id_Dianjing=@string2,
+                                "JianKong_qiangji=@string6, JianKong_renlian=@string7, JianKong_shiwai=@string8, JianKong=@string9, XinXifabu=@string10, " +
+                                "NengHao=@string11, MenJinkongzhi=@string12, MenJin=@string13, XunGeng=@string14, WuZhangaihujiao=@string15, " +
+                                "RuQintance=@string16, DDC=@string19, gmt_change=@string18, " +
 
 
-                            " YuLiu1=@string20,YuLiu2=@string21,YuLiu3=@string22,YuLiu4=@string23,YuLiu5=@string24,YuLiu6=@string25, " +
-                            " DianWei=@string26,ONU_24=@string27,ONU_POE24=@string28, ONU_GC24POE=@string29, FenGuangqi_216=@string30, AHD=@string31, AP=@string32" +
-                            " WHERE IdKey=@string1";
-                        //
+                                " YuLiu1=@string20,YuLiu2=@string21,YuLiu3=@string22,YuLiu4=@string23,YuLiu5=@string24,YuLiu6=@string25, " +
+                                " DianWei=@string26,ONU_24=@string27,ONU_POE24=@string28, ONU_GC24POE=@string29, FenGuangqi_216=@string30, AHD=@string31, AP=@string32" +
+                                " WHERE IdKey=@string1";
+                            //
 
-                        //SQL语句中对应的变量
-                        MySqlCommand cmd_Update = new MySqlCommand(sql_Update, conn);
-                        cmd_Update.Parameters.AddWithValue("@string1", list4[i].IdKey);
-                        cmd_Update.Parameters.AddWithValue("@string2", list4[i].Id_Dianjing);
-                        cmd_Update.Parameters.AddWithValue("@string3", list4[i].Floor1);
-                        cmd_Update.Parameters.AddWithValue("@string4", list4[i].Floor2);
-                        cmd_Update.Parameters.AddWithValue("@string5", list4[i].JianKong_qiuji);
+                            //SQL语句中对应的变量
+                            var cmd_Update = new SQLiteCommand(sql_Update, conn);
+                            cmd_Update.Parameters.AddWithValue("@string1", list4[i].IdKey);
+                            cmd_Update.Parameters.AddWithValue("@string2", list4[i].Id_Dianjing);
+                            cmd_Update.Parameters.AddWithValue("@string3", list4[i].Floor1);
+                            cmd_Update.Parameters.AddWithValue("@string4", list4[i].Floor2);
+                            cmd_Update.Parameters.AddWithValue("@string5", list4[i].JianKong_qiuji);
 
 
-                        cmd_Update.Parameters.AddWithValue("@string6", list4[i].JianKong_qiangji);
-                        cmd_Update.Parameters.AddWithValue("@string7", list4[i].JianKong_renlian);
-                        cmd_Update.Parameters.AddWithValue("@string8", list4[i].JianKong_shiwai);
-                        cmd_Update.Parameters.AddWithValue("@string9", list4[i].JianKong);
-                        cmd_Update.Parameters.AddWithValue("@string10", list4[i].XinXifabu);
+                            cmd_Update.Parameters.AddWithValue("@string6", list4[i].JianKong_qiangji);
+                            cmd_Update.Parameters.AddWithValue("@string7", list4[i].JianKong_renlian);
+                            cmd_Update.Parameters.AddWithValue("@string8", list4[i].JianKong_shiwai);
+                            cmd_Update.Parameters.AddWithValue("@string9", list4[i].JianKong);
+                            cmd_Update.Parameters.AddWithValue("@string10", list4[i].XinXifabu);
 
-                        cmd_Update.Parameters.AddWithValue("@string11", list4[i].NengHao);
-                        cmd_Update.Parameters.AddWithValue("@string12", list4[i].MenJinkongzhi);
-                        cmd_Update.Parameters.AddWithValue("@string13", list4[i].MenJin);
-                        cmd_Update.Parameters.AddWithValue("@string14", list4[i].XunGeng);
-                        cmd_Update.Parameters.AddWithValue("@string15", list4[i].WuZhangaihujiao);
+                            cmd_Update.Parameters.AddWithValue("@string11", list4[i].NengHao);
+                            cmd_Update.Parameters.AddWithValue("@string12", list4[i].MenJinkongzhi);
+                            cmd_Update.Parameters.AddWithValue("@string13", list4[i].MenJin);
+                            cmd_Update.Parameters.AddWithValue("@string14", list4[i].XunGeng);
+                            cmd_Update.Parameters.AddWithValue("@string15", list4[i].WuZhangaihujiao);
 
-                        cmd_Update.Parameters.AddWithValue("@string16", list4[i].RuQintance);
-                        cmd_Update.Parameters.AddWithValue("@string19", list4[i].DDC);
-                        cmd_Update.Parameters.AddWithValue("@string18", DateTime.Now.ToString("yy-MM-dd"));
+                            cmd_Update.Parameters.AddWithValue("@string16", list4[i].RuQintance);
+                            cmd_Update.Parameters.AddWithValue("@string19", list4[i].DDC);
+                            cmd_Update.Parameters.AddWithValue("@string18", DateTime.Now.ToString("yy-MM-dd"));
 
-                        cmd_Update.Parameters.AddWithValue("@string20", list4[i].YuLiu1);
+                            cmd_Update.Parameters.AddWithValue("@string20", list4[i].YuLiu1);
 
-                        cmd_Update.Parameters.AddWithValue("@string21", list4[i].YuLiu2);
-                        cmd_Update.Parameters.AddWithValue("@string22", list4[i].YuLiu3);
-                        cmd_Update.Parameters.AddWithValue("@string23", list4[i].YuLiu4);
-                        cmd_Update.Parameters.AddWithValue("@string24", list4[i].YuLiu5);
-                        cmd_Update.Parameters.AddWithValue("@string25", list4[i].YuLiu6);
+                            cmd_Update.Parameters.AddWithValue("@string21", list4[i].YuLiu2);
+                            cmd_Update.Parameters.AddWithValue("@string22", list4[i].YuLiu3);
+                            cmd_Update.Parameters.AddWithValue("@string23", list4[i].YuLiu4);
+                            cmd_Update.Parameters.AddWithValue("@string24", list4[i].YuLiu5);
+                            cmd_Update.Parameters.AddWithValue("@string25", list4[i].YuLiu6);
 
-                        //26~28
-                        cmd_Update.Parameters.AddWithValue("@string26", list4[i].DianWei);
-                        cmd_Update.Parameters.AddWithValue("@string27", list4[i].ONU_24);
-                        cmd_Update.Parameters.AddWithValue("@string28", list4[i].ONU_POE24);
+                            //26~28
+                            cmd_Update.Parameters.AddWithValue("@string26", list4[i].DianWei);
+                            cmd_Update.Parameters.AddWithValue("@string27", list4[i].ONU_24);
+                            cmd_Update.Parameters.AddWithValue("@string28", list4[i].ONU_POE24);
 
-                        //230506新添加的列
-                        cmd_Update.Parameters.AddWithValue("@string29", list4[i].ONU_GC24POE);
-                        cmd_Update.Parameters.AddWithValue("@string30", list4[i].FenGuangqi_216);
-                        cmd_Update.Parameters.AddWithValue("@string31", list4[i].AHD);
-                        cmd_Update.Parameters.AddWithValue("@string32", list4[i].AP);
-                        cmd_Update.ExecuteNonQuery();
+                            //230506新添加的列
+                            cmd_Update.Parameters.AddWithValue("@string29", list4[i].ONU_GC24POE);
+                            cmd_Update.Parameters.AddWithValue("@string30", list4[i].FenGuangqi_216);
+                            cmd_Update.Parameters.AddWithValue("@string31", list4[i].AHD);
+                            cmd_Update.Parameters.AddWithValue("@string32", list4[i].AP);
+                            cmd_Update.ExecuteNonQuery();
 
+                        }
                     }
-                }
-
-                //此批次数据处理全部完成后关闭数据库连接
-                conn.Close();
-
-
+                } // end of using
             }
             return true;
 

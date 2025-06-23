@@ -9,8 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 using Sunny.UI;
-using MySql.Data;
-using MySql.Data.MySqlClient;
 
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -20,6 +18,8 @@ using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Colors;
 
 using Color = Autodesk.AutoCAD.Colors.Color;
+using System.Data.SQLite;
+using WeakCurrent1.Common;
 
 namespace WeakCurrent1
 {
@@ -28,17 +28,11 @@ namespace WeakCurrent1
         Database db;
         Editor ed;
         Transaction trans;
-        MySqlConnection conn;
-        string tablename ;
+        //MySqlConnection conn;
 
-        public FasPage(string connStr,string strTable)
+        public FasPage()
         {
             InitializeComponent();   //Form初始化
-
-            //SQL初始化
-            tablename = strTable;
-            conn = new MySqlConnection(connStr);
-
             InitializeImportDWG();   //导入图块
         }
 
@@ -83,7 +77,7 @@ namespace WeakCurrent1
         private void uiSymbolButton2_Click(object sender, EventArgs e)
         {
             //查询楼层信息
-            List<LouCeng> list_Louceng = Common.MyTools.ChaXunlouceng(conn, tablename);
+            List<LouCeng> list_Louceng = Common.MyTools.ChaXunlouceng();
 
 
             //CAD所需变量初始化
@@ -142,7 +136,7 @@ namespace WeakCurrent1
                         //遍历所选多段线的顶点,并添加到Point3d类列表
                         for (int j = 0; j < pline.NumberOfVertices; j++)
                         {
-                            Point3d pt = pline.GetPoint3dAt(j);
+                            Point3d pt  = pline.GetPoint3dAt(j);
                             pts.Add(pt);
                         }
 
@@ -194,7 +188,7 @@ namespace WeakCurrent1
 
                     trans.Commit();
                     //显示前,将list进行简单排序
-                    var list_Pingmian = (from d in list2
+                    List<FASJiSuanshuExcel> list_Pingmian = (from d in list2
                                         orderby d.Id_Dianjing
                                         select d).ToList();
 
@@ -243,7 +237,7 @@ namespace WeakCurrent1
             //从表格2中获取信息
             List<FASJiSuanshuExcel> list1 = Common.MyTools.UIDGSecToFasList(uiDG_PingMian);
             //获取当前SQL中的所有有效主键
-            List<int> listKeys = Common.MySQLTools.FasSQLGetIdKeys(conn, tablename+".fastable");
+            List<int> listKeys = Common.SQLiteTools.FasSQLGetIdKeys();
             //当行内容有效时进行修改SQL
             if (list1.Count > 0)
             {
@@ -257,26 +251,21 @@ namespace WeakCurrent1
                                                       where d.IdKey > 1000 && listKeys.Contains(d.IdKey)
                                                       select d).ToList();
 
-                //连接MySQL
-                if (conn.State == ConnectionState.Closed)
-                {
-                    conn.Open();
-                }
+                
 
                 if(listInsert.Count>0)
                 {
                     //在MYSQL中新建行
-                    Common.MySQLTools.FasSQLInsert(conn, tablename + ".fastable", listInsert);
+                    Common.SQLiteTools.FasSQLInsert(listInsert);
                     //在AutoCAD中更新主键
-                    Common.FASTools.UpdateBlkKeys(conn,db,ed, tablename + ".fastable", listInsert);
+                    Common.FASTools.UpdateBlkKeys(db,ed,listInsert);
                 } // end of listInset.Count>0
 
                 if(listUpdate.Count>0)
                 {
-                    Common.MySQLTools.FasUpdate(conn, tablename + ".fastable", listUpdate);
+                    Common.SQLiteTools.FasUpdate(listUpdate);
                 } // end of listUpdate.Count>0
 
-                conn.Close();
 
                 //重新查询SQL并加载至表格
                 re_FASTABLE_FROM_SQL();
@@ -305,42 +294,35 @@ namespace WeakCurrent1
         /// </summary>
         public void re_FASTABLE_FROM_SQL()
         {
-            //连接MySQL
-            if (conn.State == ConnectionState.Closed)
+            using (var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
             {
-                conn.Open();
+                    //SQL查询指令
+                    string sql1 =
+                        "SELECT IdKey, Id_Dianjing ,Floor1,Floor2,SI, " +
+                    "DianWeiall,DianWeiliandong, HuiLu, " +
+                    "ShouBao,ShengGuang,JuanLianA,JuanLianB,QieFei,DianTi,GP," +
+                    "ZYFJ,BFJ,PYFJ,XHSB,PLB," +
+                    "WYB,BEC,BED,BEEH,BECH," +
+                    "DYCB,Fa70,Fa280,ShuiLiuZSQ,XinHaofa," +
+                    "ShiShiBJF,LiuLiangKG,YaLiKG,WenGan,XiaoHuoshuan," +
+                    "EXWenGan,XFDianHua,LouCengXSQ,gmt_create,gmt_change," +
+                    "B,YanGan,PaiYanchuang,GuangBo,RD,RDK,XXGSYanGan  " +
+                    " FROM fastable" ;
+                    //查询,并将结果存入
+                    var cmd = new SQLiteCommand(sql1, conn);
+                    var daAdpter = new SQLiteDataAdapter(cmd);
 
-                //SQL查询指令
-                string fastablename = tablename + ".fastable";
-                string sql1 =
-                    "SELECT IdKey, Id_Dianjing ,Floor1,Floor2,SI, " +
-                "DianWeiall,DianWeiliandong, HuiLu, " +
-                "ShouBao,ShengGuang,JuanLianA,JuanLianB,QieFei,DianTi,GP," +
-                "ZYFJ,BFJ,PYFJ,XHSB,PLB," +
-                "WYB,BEC,BED,BEEH,BECH," +
-                "DYCB,Fa70,Fa280,ShuiLiuZSQ,XinHaofa," +
-                "ShiShiBJF,LiuLiangKG,YaLiKG,WenGan,XiaoHuoshuan," +
-                "EXWenGan,XFDianHua,LouCengXSQ,gmt_create,gmt_change," +
-                "B,YanGan,PaiYanchuang,GuangBo,RD,RDK,XXGSYanGan  " +
-                " FROM " + fastablename;
-                //查询,并将结果存入
-                MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                MySqlDataAdapter daAdpter = new MySqlDataAdapter(cmd);
+                    DataSet dts = new DataSet();
+                    daAdpter.Fill(dts, "Table_Re");
 
-                DataSet dts = new DataSet();
-                daAdpter.Fill(dts, "Table_Re");
+                    System.Data.DataTable dt1 = dts.Tables["Table_Re"];
 
-                System.Data.DataTable dt1 = dts.Tables["Table_Re"];
+                    //uiDataGridView1.Rows[i].Close();
+                    //DataGridView数据填充
+                    uiDG_All.DataSource = dts;
+                    uiDG_All.DataMember = "Table_Re";
 
-                //uiDataGridView1.Rows[i].Close();
-                //DataGridView数据填充
-                uiDG_All.DataSource = dts;
-                uiDG_All.DataMember = "Table_Re";
-
-                //关闭数据库连接
-                conn.Close();
-
-            }
+            } //end of using conn
         }
         
         /// <summary>
@@ -544,7 +526,7 @@ namespace WeakCurrent1
                 try
                 {
                     //UPDATE SQL
-                    Common.MySQLTools.FasUpdateSQLByKey(conn, tablename + ".fastable", listUpdateToSQL);
+                    Common.SQLiteTools.FasUpdateSQLByKey(listUpdateToSQL);
                     MessageBox.Show("修改成功");
                     
 

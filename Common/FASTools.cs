@@ -3,7 +3,6 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 
 
-using MySql.Data.MySqlClient;
 using Sunny.UI;
 using System;
 using System.Collections.Generic;
@@ -676,17 +675,13 @@ namespace WeakCurrent1.Common
                 // 手报(带电话插孔)
                 ShouBao = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002655" }),
                 // 声光
-                //"$EQUIP$00002679"
                 ShengGuang = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002679" }),
-                //num_blks.FirstOrDefault(x => new string[] { "$EQUIP$00002679" }.Contains(x.BlockName))?.Count ?? 0,
                 // 防火卷帘(疏散通道)
-                //"$EQUIP$00002770"
-                //"$EQUIP_U$00000248"
-                JuanLianA = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002770", "$EQUIP_U$00000248(SY3SUNZM)" }),
+                JuanLianA = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002770", "$EQUIP_U$00000248(SY3SUNZM)", "$EQUIP_U$00000248(SZM-PC)" }),
                 // 切非模块
-                QieFei = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000176(SY3SUNZM)", "$EQUIP_U$00000250(SY3SUNZM)" }),
+                QieFei = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000176(SY3SUNZM)", "$EQUIP_U$00000250(SY3SUNZM)", "$EQUIP_U$00000176(SZM-PC)", "$EQUIP_U$00000250(SZM-PC)" }),
                 // 电梯模块
-                DianTi = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000177(SY3SUNZM)" }),
+                DianTi = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000177(SY3SUNZM)", "$EQUIP_U$00000177(SZM-PC)" }),
                 // 烟感
                 YanGan = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002649" }),
                 // 温感
@@ -706,61 +701,52 @@ namespace WeakCurrent1.Common
                 // 流量开关
                 LiuLiangKG = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00003128" }),
                 // 水流指示器
-                //num_blks.FirstOrDefault(x => new string[] { "$EQUIP$00002792", "$EQUIP$00002760" }.Contains(x.BlockName))?.Count ?? 0,
                 ShuiLiuZSQ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002792", "$EQUIP$00002760" }),
                 // 信号阀
                 XinHaofa = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002794" }),
                 // 湿式报警阀组
                 ShiShiBJF = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00003103" }),
                 // 消火栓泵
-                //$equip_U$00000178(SY3SUNZM)
-                XHSB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000178(SY3SUNZM)" }),
+                XHSB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000178(SY3SUNZM)", "$EQUIP_U$00000178(SZM-PC)" }),
                 // 喷淋泵
-                PLB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000179(SY3SUNZM)" }),
+                PLB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000179(SY3SUNZM)", "$EQUIP_U$00000179(SZM-PC)" }),
                 // 稳压泵
-                WYB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000180(SY3SUNZM)" }),
+                WYB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000180(SY3SUNZM)", "$EQUIP_U$00000180(SZM-PC)" }),
                 // GP 楼梯间正压送风口
                 GP = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00003100", "FASPM-GP1", "FASPM-GP2" }),
-                //num_blks.FirstOrDefault(x => new string[] { "$EQUIP$00003100", "FASPM-GP1" }.Contains(x.BlockName))?.Count ?? 0,
                 // 挡烟垂壁
-                DYCB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000141(SY3SUNZM)", "$EQUIP_U$00000184(SY3SUNZM)" }),
+                DYCB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000141(SY3SUNZM)", "$EQUIP_U$00000184(SY3SUNZM)", "$EQUIP_U$00000141(SZM-PC)", "$EQUIP_U$00000184(SZM-PC)" }),
                 // 正压风机
-                ZYFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000182(SY3SUNZM)", "$EQUIP_U$00000161(SY3SUNZM)" }),
+                ZYFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000182(SY3SUNZM)", "$EQUIP_U$00000161(SY3SUNZM)", "$EQUIP_U$00000182(SZM-PC)", "$EQUIP_U$00000161(SZM-PC)" }),
                 // 消防补风机
-                BFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000183(SY3SUNZM)", "$EQUIP_U$00000162(SY3SUNZM)" }),
+                BFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000183(SY3SUNZM)", "$EQUIP_U$00000162(SY3SUNZM)", "$EQUIP_U$00000183(SZM-PC)", "$EQUIP_U$00000162(SZM-PC)" }),
                 // 排烟风机
-                PYFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000181(SY3SUNZM)", "$EQUIP_U$00000160(SY3SUNZM)" }),
+                PYFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000181(SY3SUNZM)", "$EQUIP_U$00000160(SY3SUNZM)", "$EQUIP_U$00000181(SZM-PC)", "$EQUIP_U$00000160(SZM-PC)" }),
                 // BEC 70℃
-                BEC = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000172(SY3SUNZM)", "FASPM-BEC1", "FASPM-BEC2" }),
+                BEC = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000172(SY3SUNZM)", "FASPM-BEC1", "FASPM-BEC2", "$EQUIP_U$00000172(SZM-PC)" }),
                 // BED 70℃动作的常开防火阀
                 BED = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002402", "FASPM-BED1" }),
                 //BEEH 280℃动作的常开排烟阀
                 BEEH = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002403", "FASPM-BEEH1" }),
                 //BECH 
-                // num_blks.FirstOrDefault(x => new string[] { "$EQUIP$00002413", "FASPM-BECH1", "FASPM-BECH2" }.Contains(x.BlockName))?.Count ?? 0,
-                //BECH = num_blks.FirstOrDefault(x => new string[] { "$EQUIP$00002413", "FASPM-BECH1", "FASPM-BECH2" }.Contains(x.BlockName))?.Count ?? 0,
                 BECH = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002413", "FASPM-BECH1", "FASPM-BECH2" }),
                 //70度防火阀
-
                 Fa70 = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002859", "FASPM-70度防火阀1" }),
                 //280度防火阀
                 Fa280 = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002858", "FASPM-280度防火阀1" }),
                 // 待添加：BECH的就地手动控制按钮E
                 B = MyTools.count_Blks_Num(num_blks, new List<string> { "待添加" }),
                 //电动排烟窗
-                PaiYanchuang = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000249(SY3SUNZM)" }),
+                PaiYanchuang = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000249(SY3SUNZM)", "$EQUIP_U$00000249(SZM-PC)" }),
                 //线型光束感烟探测器（接收端）
                 XXGSYanGan = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002763" }),
-                //num_blks.FirstOrDefault(x => new string[] { "$EQUIP_U$00000249(SY3SUNZM)" }.Contains(x.BlockName))?.Count ?? 0,
                 //消防广播
                 GuangBo = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002341", "$EQUIP_U$00000114(SY3SUNZM)", "$EQUIP$00002544", "$EQUIP$00002984" }),
-                //卷帘
-                //JuanLianA = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00000248" }),
                 //常闭防火门监控模块
                 RD = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002771", "A$C54AB6E89", "$EQUIP_U$00000081(SY3SUNZM)" }),
                 //常开防火门监控模块
-                RDK = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000126(SY3SUNZM)" }),
-                
+                RDK = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000126(SY3SUNZM)", "$EQUIP_U$00000126(SZM-PC)" }),
+
             }; //end of  fas
 
             //fas.DianWeiall等于以上所有属性数量总和
@@ -789,7 +775,7 @@ namespace WeakCurrent1.Common
         /// <param name="db"></param>
         /// <param name="ed"></param>
         /// <param name="listInsert"></param>
-        public static void UpdateBlkKeys(MySqlConnection conn, Database db, Editor ed, string tablename, List<FASJiSuanshuExcel> listInsert)
+        public static void UpdateBlkKeys(Database db, Editor ed, List<FASJiSuanshuExcel> listInsert)
         {
             //主函数
             try
@@ -824,67 +810,73 @@ namespace WeakCurrent1.Common
                     //平面选择完成后,根据返回值信息,为防火分区的块添加主键
                     if ((acSSPrompt_info.Status == PromptStatus.OK) && (id_Info.Count() > 0))
                     {
-
-                        for (int i = 0; i < listInsert.Count; i++)
+                        using (var conn = SQLiteConn.ConnSQLite())
                         {
-                            //查询主键
-                            string Id_Dianjing = listInsert[i].Id_Dianjing;
-                            string FLoor1 = listInsert[i].Floor1;
-                            int IdKey = Common.MySQLTools.FasSQLGetKey(conn, Id_Dianjing, tablename);
-
-                            //筛选出与电井编号相同的块
-                            List<ObjectId> listObjIds = (from d in id_Info
-                                                         where d.GetAttributeInBlockReference("电井/防火分区") == Id_Dianjing
-                                                         select d).ToList();
-                            //当主键有效且属性块唯一时进行修改
-                            if ((IdKey > 1000) && (listObjIds.Count == 1))
+                            for (int i = 0; i < listInsert.Count; i++)
                             {
-                                //设置主键信息
-                                Dictionary<string, string> atts = new Dictionary<string, string>
+                                //查询主键
+                                string Id_Dianjing = listInsert[i].Id_Dianjing;
+                                string FLoor1 = listInsert[i].Floor1;
+                                int IdKey = Common.SQLiteTools.FasSQLGetKey(Id_Dianjing);
+
+                                //筛选出与电井编号相同的块
+                                List<ObjectId> listObjIds = (from d in id_Info
+                                                             where d.GetAttributeInBlockReference("电井/防火分区") == Id_Dianjing
+                                                             select d).ToList();
+                                //当主键有效且属性块唯一时进行修改
+                                if ((IdKey > 1000) && (listObjIds.Count == 1))
+                                {
+                                    //设置主键信息
+                                    Dictionary<string, string> atts = new Dictionary<string, string>
                                 {
                                     { "KEY", IdKey.ToString() },
                                     { "楼层", FLoor1 }
                                 };
-                                //listObjIds应只有一个元素
-                                listObjIds[0].UpdateAttributesInBlock(atts);
+                                    //listObjIds应只有一个元素
+                                    listObjIds[0].UpdateAttributesInBlock(atts);
 
-                            } // end of if (count>!)
-                            //异常处理: 同名(Count>0)
-                            else if (listObjIds.Count > 1)
-                            {
+                                } // end of if (count>!)
+                                  //异常处理: 同名(Count>0)
+                                else if (listObjIds.Count > 1)
+                                {
 
 
-                                //设置主键信息
-                                Dictionary<string, string> atts = new Dictionary<string, string>
+                                    //设置主键信息
+                                    Dictionary<string, string> atts = new Dictionary<string, string>
                                 {
                                     { "KEY", IdKey.ToString() }
                                 };
-                                //listObjIds有多个元素时,均修改
-                                foreach (var objid in listObjIds)
-                                {
-                                    objid.UpdateAttributesInBlock(atts);
-                                }// end of foreach
+                                    //listObjIds有多个元素时,均修改
+                                    foreach (var objid in listObjIds)
+                                    {
+                                        objid.UpdateAttributesInBlock(atts);
+                                    }// end of foreach
 
-                                //将重复的块加入AREA_EXSIT_LIST
-                                AreaInfo AREAINFO = new AreaInfo()
+                                    //将重复的块加入AREA_EXSIT_LIST
+                                    AreaInfo AREAINFO = new AreaInfo()
+                                    {
+                                        Id_Dianjing = Id_Dianjing,
+                                        NUM_EXIST = listObjIds.Count
+                                    };
+                                    AREA_EXIST_LIST.Add(AREAINFO);
+                                }
+                                //异常处理: Count为0
+                                else
                                 {
-                                    Id_Dianjing = Id_Dianjing,
-                                    NUM_EXIST = listObjIds.Count
-                                };
-                                AREA_EXIST_LIST.Add(AREAINFO);
-                            }
-                            //异常处理: Count为0
-                            else
-                            {
-                                //将未找到的块加入AREA_NOTFOUND_LIST
-                                AreaInfo AREAINFO = new AreaInfo()
-                                {
-                                    Id_Dianjing = Id_Dianjing,
-                                    NUM_EXIST = 0
-                                };
-                            }
+                                    //将未找到的块加入AREA_NOTFOUND_LIST
+                                    AreaInfo AREAINFO = new AreaInfo()
+                                    {
+                                        Id_Dianjing = Id_Dianjing,
+                                        NUM_EXIST = 0
+                                    };
+                                }
 
-                        } //end of for
+                            } //end of for
+                        } //end of using
+
+
+
+                        
 
                         //弹窗提示AREA_EXSIT_LIST
                         string STR_EXIST = "以下防火分区存在多个块,请检查:\n";
@@ -981,7 +973,7 @@ namespace WeakCurrent1.Common
                 else if (purpose == "防火门")
                 {
                     //增加校验条件:此防火分区内的设备数>0时添加
-                    if (row_Insert.GuangBo > 0)
+                    if (row_Insert.RD > 0 || row_Insert.RDK > 0)
                     {
                         Dictionary<string, string> atts = new Dictionary<string, string>
                         {

@@ -12,9 +12,6 @@ using System.Linq;
 
 using System.Diagnostics;
 using System.Collections.Generic;
-
-using MySql.Data;
-using MySql.Data.MySqlClient;
 using System.Windows.Forms;
 using Application = System.Windows.Forms.Application;
 

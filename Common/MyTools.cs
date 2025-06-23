@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using MySql.Data;
-using MySql.Data.MySqlClient;
-
+﻿using Autodesk.AutoCAD.Geometry;
 using Sunny.UI;
-using System.Windows.Forms;
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Data.SQLite;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace WeakCurrent1.Common
 {
@@ -102,6 +101,22 @@ namespace WeakCurrent1.Common
         //Num_DianWeiall= num_Fasblks[5]+ num_Fasblks[6]+ num_Fasblks[7]+ num_Fasblks[8] + num_Fasblks[9] + num_Fasblks[10] 
         //      + num_Fasblks[11] + num_Fasblks[12] + num_Fasblks[13] + num_Fasblks[14] + num_Fasblks[15]
         //
+
+
+        #region 查询火灾报警表Dapper版本
+        public static List<FASJiSuanshuExcel> UIDGSecToFasList2(UIDataGridView uiDG_All)
+        {
+            //新建类
+            List<FASJiSuanshuExcel> list_Xuanzhong = new List<FASJiSuanshuExcel>();
+
+            
+
+            return list_Xuanzhong;
+        }
+
+
+        #endregion
+
 
         /// <summary>
         /// 将DataGridView中的选中行,转为List<FASJiSuanshuExcel>
@@ -276,38 +291,44 @@ namespace WeakCurrent1.Common
         /// </summary>
         /// <param name="conn"></param>
         /// <returns></returns>
-        public static List<LouCeng> ChaXunlouceng(MySqlConnection conn,string tablename)
+        public static List<LouCeng> ChaXunlouceng()
         {
 
             //查询楼层表格
             //新建返回值的list
-            string loucengtable = tablename + ".louceng";
             List<LouCeng> list_Louceng = new List<LouCeng>();
             //查询指令
-            string sql2 = "SELECT * FROM "+ loucengtable;
+            string sql = "SELECT * FROM  louceng" ;
             //打开数据库连接
-            conn.Open();
-            MySqlCommand cmd2 = new MySqlCommand(sql2, conn);
-            MySqlDataAdapter daAdpter2 = new MySqlDataAdapter(cmd2);
-            DataSet dts2 = new DataSet();
-            //将查询信息存入dt2的对应表
-            daAdpter2.Fill(dts2, "TableLouceng");
-            System.Data.DataTable t2 = dts2.Tables["TableLouceng"];
-            //关闭数据库连接
-            conn.Close();
-            //datatable转为list
-            for (int i = 0; i < t2.Rows.Count; i++)
+            var conn = SQLiteConn.ConnSQLite();
+            //数据库查询
+            using (SQLiteCommand cmd = new SQLiteCommand(sql, conn))
             {
-                LouCeng info = new LouCeng
+                using(SQLiteDataAdapter daadpter = new SQLiteDataAdapter(cmd))
                 {
-                    IdKey = t2.Rows[i]["IdKey"].ToString().ToInt(),
-                    Floor1 = t2.Rows[i]["Floor1"].ToString(),
-                    Floor2 = t2.Rows[i]["Floor2"].ToString().ToInt()
-                };
-                list_Louceng.Add(info);
-            }
-            //返回值
-            return list_Louceng;
+                    DataSet dts2 = new DataSet();
+                    //将查询信息存入dt2的对应表
+                    daadpter.Fill(dts2, "TableLouceng");
+                    System.Data.DataTable t2 = dts2.Tables["TableLouceng"];
+                    //关闭数据库连接
+                    conn.Close();
+                    //datatable转为list
+                    for (int i = 0; i < t2.Rows.Count; i++)
+                    {
+                        LouCeng info = new LouCeng
+                        {
+                            IdKey = t2.Rows[i]["IdKey"].ToString().ToInt(),
+                            Floor1 = t2.Rows[i]["Floor1"].ToString(),
+                            Floor2 = t2.Rows[i]["Floor2"].ToString().ToInt()
+                        };
+                        list_Louceng.Add(info);
+                    }
+                    //返回值
+                    conn.Close();
+                    return list_Louceng;
+                }
+
+            } //end of using (var command = new MySqlCommand(query, conn))
         }
 
         /// <summary>

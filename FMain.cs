@@ -1,66 +1,138 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Sunny.UI;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
 using System.Windows.Forms;
-
-using System.Data.SqlClient;
-using Sunny.UI;
 using WeakCurrent1.Common;
-
-
-using MySql.Data;
-using MySql.Data.MySqlClient;
-
-using Autodesk.AutoCAD.DatabaseServices;
 
 namespace WeakCurrent1
 {
     public partial class FMain : UIForm
     {
-        MySqlConnection conn;
+        // 局域变量
+        // 当前DWG文件名
+        public static string  dwgName; 
+        public static string dbName; // 全局变量，用于存储连接的数据库名称
+
 
         public FMain()
         {
             InitializeComponent();
+            
+
+
+            if(false)
+            {
+                string folderPath = @"D:\Mycode\Database\FAS"; // 替换为实际文件夹路径
+                var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".db", ".sqlite", ".sqlite3", ".db3" }; // 添加需要查找的SQLite文件扩展名
+
+                try
+                {
+
+                    IEnumerable<string> sqliteFiles = Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories);
+                    List<string> file2 = new List<string>();
+
+                    //MessageBox.Show("找到以下SQLite文件：");
+                    foreach (var file in Directory.EnumerateFiles(folderPath, "*.*", SearchOption.AllDirectories))
+                    {
+                        string dbname = System.IO.Path.GetFileName(file);
+                        file2.Add(dbname);
+                    }
+
+
+
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    MessageBox.Show("错误：指定的文件夹不存在。");
+                }
+            }
+
+
+
             Database db = Autodesk.AutoCAD.DatabaseServices.HostApplicationServices.WorkingDatabase;
 
-            //登录信息初始化
-            //获取服务器名
-            string strServer = OperatorFile.GetIniFileString("MySQL", "Server", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
-            //获取登录用户
-            string strUserID = OperatorFile.GetIniFileString("MySQL", "UserID", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
-            //获取登录密码
-            string strPwd = OperatorFile.GetIniFileString("MySQL", "Pwd", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
-            //获取端口
-            string strPort = OperatorFile.GetIniFileString("MySQL", "Port", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
-            //获取库名
-            string strDataBase = OperatorFile.GetIniFileString("MySQL", "DataBase", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
-            //获取表名
-            //string strTable = OperatorFile.GetIniFileString("MySQL", "Table", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
-            //连接信息
-            string connStr = "server = " + strServer + " ;user = " + strUserID + " ;port=" + strPort + ";password = " + strPwd;
-            //CodeInfos.ini
-            //InitializeFromSQL();
+            // 获取当前CAD文件的完整路径
+            string dwgPath = db.Filename;
+
+            // 从完整路径里提取文件名
+            dwgName = System.IO.Path.GetFileName(db.Filename);
+
+            // 获取当前DWG文件对应的数据库名称
+            dbName = SQLiteConn.FasSQLGetDBName(dwgName);
+            
+
+            if (!string.IsNullOrWhiteSpace(dbName))
+            {
+                // 如果找到了对应的数据库名称，则设置连接字符串
+                // 设置全局变量，供其他地方使用
+                SQLiteConn.ConnDBName = dbName; 
+                // 在UI文本框中显示数据库名称
+                uiTextBox1.Text = dbName;
+            }
+            else
+            {
+                // 如果没有找到对应的数据库名称，则提示用户
+                MessageBox.Show("未找到对应的数据库，请检查配置文件。", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                return;
+            }
+
+
+
+            // 把结果显示在命令行中
+            //doc.Editor.WriteMessage("\n当前CAD文件: " + fileName);
+
+            if (false)
+            {
+                //登录信息初始化
+                //获取服务器名
+                string strServer = OperatorFile.GetIniFileString("MySQL", "Server", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
+                //获取登录用户
+                string strUserID = OperatorFile.GetIniFileString("MySQL", "UserID", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
+                //获取登录密码
+                string strPwd = OperatorFile.GetIniFileString("MySQL", "Pwd", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
+                //获取端口
+                string strPort = OperatorFile.GetIniFileString("MySQL", "Port", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
+                //获取库名
+                string strDataBase = OperatorFile.GetIniFileString("MySQL", "DataBase", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
+                //获取表名
+                //string strTable = OperatorFile.GetIniFileString("MySQL", "Table", "", Path.GetDirectoryName(db.OriginalFileName) + "\\ERP.ini");
+                //连接信息
+                string connStr = "server = " + strServer + " ;user = " + strUserID + " ;port=" + strPort + ";password = " + strPwd;
+            }
+            
             Aside.TabControl = MainTabControl;
 
-
             //添加启动页面
-            //AddPage(new FStart(), 1001);     //增加启动页面
-            AddPage(new FasPage(connStr, strDataBase), 1002);        //增加页面到Main
-            AddPage(new AnFangPage(connStr, strDataBase), 1003);     //增加页面到Main
-            AddPage(new FasRuoDian(connStr, strDataBase), 1004);     //增加页面到Main
-            //Aside.CreateNode("首页", 1001); //设置Header节点索引
-            Aside.CreateNode("火灾自动报警系统", 1002); //设置Header节点索引
-            Aside.CreateNode("安防系统", 1003); //设置Header节点索引
-            Aside.CreateNode("广播及防火门系统", 1004); //设置Header节点索引
+            //添加火灾报警页面
+            AddPage(new FasPage(), 1001);        //增加页面到Main
+            Aside.CreateNode("火灾自动报警系统", 1001); //设置Header节点索引
+
+            //添加安防系统页面
+            AddPage(new AnFangPage(), 1002);
+            Aside.CreateNode("安防系统", 1002);
+
+            //添加广播及防火门系统页面
+            AddPage(new FasRuoDian(), 1003);     //增加页面到Main
+            Aside.CreateNode("广播及防火门系统", 1003); //设置Header节点索引
+
+            //添加数据库管理页面
+            //AddPage(new DBPage(), 1004);     //增加页面到Main
+            //Aside.CreateNode("数据库管理", 1004); //设置Header节点索引
+
 
         }
+
         
 
         private void Login_Load(object sender, EventArgs e)
@@ -68,74 +140,7 @@ namespace WeakCurrent1
 
         }
 
-        private void InitializeFromSQL()
-        {
-
-        }
-
-        private void uiSymbolButton1_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                //MySQL登录信息
-                string connStr = "server=localhost;user=root;database=testdb1;password=bxwh2010";
-                // Connect to SQL
-                conn = new MySqlConnection(connStr); 
-                conn.Open();
-
-                //Parameters参数查询
-                int index1 = 2000;
-                int index2 = 2;
-
-                //Mysql查询
-                //string sql1 = "SELECT IdKey, Id_Dianjing ,Floor1 FROM 海洋楼.mytest1 WHERE IdKey< @index1 AND Floor1 <@index2";
-                string sql1 = "SELECT DISTINCT Floor1 FROM 海洋楼.mytest1 ";
-                MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                cmd.Parameters.AddWithValue("@index1", index1);
-                cmd.Parameters.AddWithValue("@index2", index2);
-
-                MySqlDataAdapter daAdpter = new MySqlDataAdapter(cmd);
-                
-                DataSet dts = new DataSet();  
-                daAdpter.Fill(dts, "Table1");
-
-
-                ////DataGridView数据填充
-                //uiDataGridView1.DataSource = dts;  
-                //uiDataGridView1.DataMember = "Table1";
-
-               
-
-                
-
-                ////根据楼层数,添加页面
-                //var num_Louceng = dsCountry.Tables["Table1"].Rows.Count;
-                
-                //if (num_Louceng>0)
-                //{
-                //    int pageIndex = 2000;
-                //    TreeNode parent = Aside.CreateNode("楼层信息", 61451, 24, pageIndex);
-                //    //通过设置PageIndex关联，节点文字、图标由相应的Page的Text、Symbol提供
-                //    for(int i =0;i<num_Louceng;i++)
-                //    {
-                //        string floor1 = dsCountry.Tables["Table1"].Rows[i][0].ToString();
-                //        //Aside.CreateChildNode(parent, AddPage(new FPageLouceng(conn, floor1), ++pageIndex));
-                //        Aside.CreateChildNode(parent, AddPage(new FPageLouceng(floor1), ++pageIndex));
-
-                //    }
-                //}
-                
-                
-
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-                //uiTextBox2.Text = ex.ToString();
-            }
-            conn.Close();
-
-        }
+        
 
         private void MainContainer_Click(object sender, EventArgs e)
         {
@@ -166,12 +171,69 @@ namespace WeakCurrent1
         {
 
 
-            //if (e.SourcePage == null)
-            //{
-            //    //来自页面框架的传值
-            //    uiTextBox2.Text = e.Value.ToString();
-            //    e.Handled = true;
-            //}
+        }
+
+        private void uiComboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UIComboBox combo = (UIComboBox)sender;
+            string selectedValue = combo.SelectedItem.ToString();
+            MessageBox.Show($"你选择了: {selectedValue}");
+        }
+
+
+        private void uiSymbolButton1_Click(object sender, EventArgs e)
+        {
+            
+            // 显示修改数据库连接信息的窗口
+            DBSetForm dbSetForm = new DBSetForm(dwgName);
+
+            if (dbSetForm.ShowDialog() == DialogResult.OK)
+            {
+                // 用户点击了确定按钮，在Textbox中显示新的数据库名称
+                uiTextBox1.Text = dbName;
+                // 如果用户点击了确定按钮，重新加载页面
+                Refresh_Aside();
+            }
+        }
+
+        private void uiB_Cre_Click(object sender, EventArgs e)
+        {
+            DBCreateForm dBCreateForm = new DBCreateForm();
+            if (dBCreateForm.ShowDialog() == DialogResult.OK)
+            {
+                // 用户点击了确定按钮，在Textbox中显示新的数据库名称
+                uiTextBox1.Text = dbName;
+                // 如果用户点击了确定按钮，重新加载页面
+                Refresh_Aside();
+            }
+        }
+
+        private void Refresh_Aside()
+        {
+            // 当页面未加载时，Aside.TabControl为null
+            if (Aside.TabControl != null)
+            {
+                var num = Aside.TabControl.RowCount; //获取当前页面数量
+                                                     // 释放页面资源
+                for (int i = 1001; i < num + 1001; i++)
+                {
+                    var page1 = Aside.TabControl.GetPage(i);
+                    page1.Dispose();
+                }
+            }
+            //清空侧面栏
+            Aside.ClearAll();
+
+            AddPage(new FasPage(), 1001);        //增加页面到Main
+            Aside.CreateNode("火灾自动报警系统", 1001); //设置Header节点索引
+
+            //添加安防系统页面
+            AddPage(new AnFangPage(), 1002);
+            Aside.CreateNode("安防系统", 1002);
+
+            //添加广播及防火门系统页面
+            AddPage(new FasRuoDian(), 1003);     //增加页面到Main
+            Aside.CreateNode("广播及防火门系统", 1003); //设置Header节点索引
         }
     }
     

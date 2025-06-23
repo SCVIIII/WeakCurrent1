@@ -1,23 +1,22 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
+using Sunny.UI;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Data.SqlClient;
+using System.Data.SQLite;
 using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
-using Sunny.UI;
-using MySql.Data;
-using MySql.Data.MySqlClient;
-
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Colors;
+using WeakCurrent1.Common;
 using Color = Autodesk.AutoCAD.Colors.Color;
 
 namespace WeakCurrent1
@@ -27,15 +26,11 @@ namespace WeakCurrent1
         Database db;
         Editor ed;
         Transaction trans;
-        MySqlConnection conn;
         string databasename ;
 
-        public AnFangPage(string connStr,string strTable)
+        public AnFangPage()
         {
             InitializeComponent();   //Form初始化
-            //SQL初始化
-            databasename = strTable;
-            conn = new MySqlConnection(connStr);
             InitializeImportDWG();   //导入图块
         }
 
@@ -68,21 +63,24 @@ namespace WeakCurrent1
         private void FPageLouceng_Load(object sender, EventArgs e)
         {
             //打开数据库连接
-            conn.Open();
-            //Parameters参数查询
-            string anfangtable= databasename + ".anfangtable";
-            //查询所有
-            string sql1 ="SELECT *  FROM " + anfangtable; 
-            MySqlCommand cmd = new MySqlCommand(sql1, conn);
-            MySqlDataAdapter daAdpter = new MySqlDataAdapter(cmd);
+            using (var conn =new SQLiteConnection(SQLiteConn.ConnSQLite()))
+            {
+                //Parameters参数查询
+                //查询所有
+                string sql1 = "SELECT *  FROM   anfangtable";
+                var cmd = new SQLiteCommand(sql1, conn);
+                var daAdpter = new SQLiteDataAdapter(cmd);
 
-            DataSet dts = new DataSet();
-            daAdpter.Fill(dts, "AnfangTable");
-            //关闭数据库连接
-            conn.Close();
-            //DataGridView数据填充
-            uiDG_All.DataSource = dts;
-            uiDG_All.DataMember = "AnfangTable";
+                DataSet dts = new DataSet();
+                daAdpter.Fill(dts, "AnfangTable");
+                //关闭数据库连接
+                conn.Close();
+                //DataGridView数据填充
+                uiDG_All.DataSource = dts;
+                uiDG_All.DataMember = "AnfangTable";
+            }
+
+            
         }  //end of load
 
         /// <summary>
@@ -93,7 +91,7 @@ namespace WeakCurrent1
         private void uiSymbolButton2_Click(object sender, EventArgs e)
         {
             //查询楼层信息
-            List<LouCeng> list_Louceng = Common.MyTools.ChaXunlouceng(conn, databasename);
+            List<LouCeng> list_Louceng = Common.MyTools.ChaXunlouceng();
 
             //Step1 在CAD中创建筛选条件SelectionFilter
             //防火分区框对应pline线的筛选条件
@@ -251,7 +249,7 @@ namespace WeakCurrent1
             //从表格2中获取信息
             List<AnFangClass> list1 = Common.AnFangTools.UIDGSecToSheBeiWangList(uiDG_PingMian);
             //获取当前SQL中的所有有效主键
-            List<int> listKeys =Common.AnFangTools.AnFangSQLGetIdKeys(conn, databasename);
+            List<int> listKeys =Common.AnFangTools.AnFangSQLGetIdKeys();
             //当行内容有效时进行修改SQL
             if (list1.Count > 0)
             {
@@ -265,24 +263,20 @@ namespace WeakCurrent1
                                                       where d.IdKey > 1000 && listKeys.Contains(d.IdKey)
                                                       select d).ToList();
 
-                //连接MySQL
-                if (conn.State == ConnectionState.Closed)
-                {
-                    conn.Open();
-                }
+                //连接SQLite
+                
 
                 if(listInsert.Count>0)
                 {
-                    Common.AnFangTools.AnFangAddToSQL(conn, databasename, listInsert);
-                    Common.AnFangTools.AnFangUpdateBlkKeys(conn, db, ed, databasename, listInsert);
+                    Common.AnFangTools.AnFangAddToSQL(listInsert);
+                    Common.AnFangTools.AnFangUpdateBlkKeys(db, ed, listInsert);
                 } // end of listInset.Count>0
 
-                if(listUpdate.Count>0)
+                if (listUpdate.Count > 0)
                 {
-                    Common.AnFangTools.AnFangUpdateSQL(conn, databasename, listUpdate);
+                    Common.AnFangTools.AnFangUpdateSQL(listUpdate);
                 } // end of listUpdate.Count>0
 
-                conn.Close();
 
                 //重新查询SQL并加载至表格
                 ReSQL();
@@ -310,22 +304,19 @@ namespace WeakCurrent1
 
 
         /// <summary>
-        /// 重新查询SQL
+        /// 重新查询安防系统SQL
         /// </summary>
         public void ReSQL()
         {
-            //连接MySQL
-            if (conn.State == ConnectionState.Closed)
+            using(var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()) )
             {
-                conn.Open();
-
                 //SQL查询指令
                 string sql1 =
                     "SELECT *  " +
-                " FROM " + databasename+".anfangtable";
+                " FROM anfangtable";
                 //查询,并将结果存入
-                MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                MySqlDataAdapter daAdpter = new MySqlDataAdapter(cmd);
+                var cmd = new SQLiteCommand(sql1, conn);
+                var daAdpter = new SQLiteDataAdapter(cmd);
 
                 DataSet dts = new DataSet();
                 daAdpter.Fill(dts, "Table_Re");
@@ -335,10 +326,6 @@ namespace WeakCurrent1
                 //DataGridView数据填充
                 uiDG_All.DataSource = dts;
                 uiDG_All.DataMember = "Table_Re";
-
-                //关闭数据库连接
-                conn.Close();
-
             }
         }
         
@@ -550,7 +537,7 @@ namespace WeakCurrent1
                 try
                 {
                     //UPDATE SQL
-                    Common.MySQLTools.FasUpdateSQLByKey(conn, databasename ,listUpdateToSQL);
+                    Common.SQLiteTools.FasUpdateSQLByKey(listUpdateToSQL);
                     MessageBox.Show("修改成功");
                     
 
@@ -1207,7 +1194,7 @@ namespace WeakCurrent1
             //从表格2中获取信息
             List<AnFangClass> list1 = Common.AnFangTools.UIDGSecToSheBeiWangList(uiDG_PingMian);
             //获取当前SQL中的所有有效主键
-            List<int> listKeys = Common.AnFangTools.AnFangSQLGetIdKeys(conn, databasename);
+            List<int> listKeys = Common.AnFangTools.AnFangSQLGetIdKeys();
             
             //当行内容有效时进行修改SQL
             if (list1.Count > 0)
@@ -1218,21 +1205,18 @@ namespace WeakCurrent1
                 // 构建包含行 IDKEY 的字符串
                 string idsString = string.Join(",", listDeleteIDKey);
 
-                //连接MySQL
-                if (conn.State == ConnectionState.Closed)
+                
+                using(var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
                 {
-                    conn.Open();
+                    //删除行
+                    string sqldelete = "DELETE FROM anfangtable WHERE IDKEY IN ({idsString})";
+                    using (var command = new SQLiteCommand(sqldelete, conn))
+                    {
+                        // 执行 SQL 命令
+                        int rowsAffected = command.ExecuteNonQuery();
+                    }
                 }
-
-                //删除行
-                string tablename = databasename + ".anfangtable";
-                string sqldelete = "DELETE FROM {tablename} WHERE IDKEY IN ({idsString})";
-                using (var command = new MySqlCommand(sqldelete, conn))
-                {
-                    // 执行 SQL 命令
-                    int rowsAffected = command.ExecuteNonQuery();
-                }
-                conn.Close();
+                
 
                 //重新查询SQL并加载至表格
                 ReSQL();

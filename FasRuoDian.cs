@@ -1,25 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using System.Windows.Forms;
-using Sunny.UI;
-
-using MySql.Data.MySqlClient;
-
-using Autodesk.AutoCAD.ApplicationServices;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Colors;
-
-
+using Sunny.UI;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Data.SQLite;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using WeakCurrent1.Common;
 using Color = Autodesk.AutoCAD.Colors.Color;
 
 namespace WeakCurrent1
@@ -30,20 +27,12 @@ namespace WeakCurrent1
         Database db;
         Editor ed;
         Transaction trans;
-        MySqlConnection conn;
-        string tablename;
 
 
-        public FasRuoDian(string connStr, string strTable)
+        public FasRuoDian()
         {
             InitializeComponent();
-
-            //SQL初始化
-            tablename = strTable;
-            conn = new MySqlConnection(connStr);
-
             InitializeImportDWG();   //导入图块
-
         }
 
         /// <summary>
@@ -70,27 +59,29 @@ namespace WeakCurrent1
 
         private void GenericCablingPage_Load(object sender, EventArgs e)
         {
-            //打开数据库连接
-            conn.Open();
-            //Parameters参数查询
-            //230409增加SI
-            string fastablename = tablename + ".fastable";
 
-            string sql1 = "SELECT IdKey, Id_Dianjing, GuangBo, RD, RDK, Floor1, Floor2 " +
-              "FROM " + fastablename;
+            using (var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
+            {
+                //Parameters参数查询
+                //230409增加SI
+                string sql1 = "SELECT IdKey, Id_Dianjing, GuangBo, RD, RDK, Floor1, Floor2 " +
+                  "FROM fastable" ;
 
 
-            MySqlCommand cmd = new MySqlCommand(sql1, conn);
+                var cmd = new SQLiteCommand(sql1, conn);
 
-            MySqlDataAdapter daAdpter = new MySqlDataAdapter(cmd);
+                var daAdpter = new SQLiteDataAdapter(cmd);
 
-            DataSet dts = new DataSet();
-            daAdpter.Fill(dts, "Table3");
-            //关闭数据库连接
-            conn.Close();
-            //DataGridView数据填充
-            uiDG_All.DataSource = dts;
-            uiDG_All.DataMember = "Table3";
+                DataSet dts = new DataSet();
+                daAdpter.Fill(dts, "Table3");
+                //关闭数据库连接
+                conn.Close();
+                //DataGridView数据填充
+                uiDG_All.DataSource = dts;
+                uiDG_All.DataMember = "Table3";
+            }
+
+            
         }
 
         private void GenericCablingPage_Initialize(object sender, EventArgs e)
@@ -136,28 +127,24 @@ namespace WeakCurrent1
         /// <param name="e"></param>
         private void uiB3_Click(object sender, EventArgs e)
         {
-            //连接MySQL
-            if (conn.State == ConnectionState.Closed)
+            using(var conn = new SQLiteConnection(SQLiteConn.ConnSQLite()))
             {
-                conn.Open();
-                string fastablename = tablename + ".fastable";
+
                 //SQL查询指令
-                string sql1 ="SELECT IdKey, Id_Dianjing,GuangBo,RD,RDK ,Floor1,Floor2 FROM " + fastablename;
+                string sql1 = "SELECT IdKey, Id_Dianjing,GuangBo,RD,RDK ,Floor1,Floor2 FROM fastable";
 
-                //查询,并将结果存入
-                MySqlCommand cmd = new MySqlCommand(sql1, conn);
-                MySqlDataAdapter daAdpter = new MySqlDataAdapter(cmd);
+                using(var cmd = new SQLiteCommand(sql1,conn))
+                {
+                    var daAdpter=new SQLiteDataAdapter(cmd);
 
-                DataSet dts = new DataSet();
-                daAdpter.Fill(dts, "Table_Re");
+                    DataSet dts = new DataSet();
+                    daAdpter.Fill(dts, "Table_Re");
 
-                //DataGridView数据填充
-                uiDG_All.DataSource = dts;
-                uiDG_All.DataMember = "Table_Re";
-
-                //关闭数据库连接
-                conn.Close();
-            } // end of if
+                    //DataGridView数据填充
+                    uiDG_All.DataSource = dts;
+                    uiDG_All.DataMember = "Table_Re";
+                }
+            }
         } // end of 刷新按钮
 
 
