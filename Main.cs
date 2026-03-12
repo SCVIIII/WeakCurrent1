@@ -1,19 +1,22 @@
 ﻿// (C) Copyright 2023 by  
 //
 using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Colors;
+using Autodesk.AutoCAD.Windows;
 using System;
-using System.Linq;
-
-
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Windows.Forms;
+using System.Windows.Media.Imaging;
 using Application = System.Windows.Forms.Application;
+using MenuItem = Autodesk.AutoCAD.Windows.MenuItem;
 
 
 namespace WeakCurrent1
@@ -28,11 +31,11 @@ namespace WeakCurrent1
     // a command is called by the user the first time in the context
     // of a given document. In other words, non static data in this class
     // is implicitly per-document!
-    public partial class MyCommands
+    public partial class MyCommands 
     {
 
 
-        #region AutoCAD测试
+        #region 功能1：弱电程序入口
         //测试方式二
         [CommandMethod("d2")]
         public void ShowCADDialog()
@@ -44,6 +47,11 @@ namespace WeakCurrent1
         }
         #endregion
 
+
+        #region 功能2：
+
+
+        #endregion
 
 
 
@@ -199,7 +207,7 @@ namespace WeakCurrent1
         public int RDK { get; set; }  //常开防火门
         public int JuanlianA { get; set; }
         public int XXGSYanGan { get; set; }  //预留1 线型光束感烟火灾探测器（接收端）
-        public int YuLiu2 { get; set; }  //预留2
+        public int YuLiu2 { get; set; }  //预留2 
         public int YuLiu3 { get; set; }  //预留3
         public int YuLiu4 { get; set; }  //预留4
         public int YuLiu5 { get; set; }  //预留5

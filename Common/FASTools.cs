@@ -47,6 +47,7 @@ namespace WeakCurrent1.Common
                 Point3d ptBlk = ptStart.PolarPoint(0, 7300).PolarPoint((Math.PI / 2), 1700);
                 Point3d ptKxian1 = ptStart.PolarPoint(0, 6500).PolarPoint((Math.PI / 2), 3150);
                 Point3d ptKxian2 = new Point3d();
+                bool bKxian = false; //是否需要画K线
 
                 //插入楼层框,并自动填写楼层,防火分区,主键,点位信息
                 if (true)
@@ -76,18 +77,34 @@ namespace WeakCurrent1.Common
                 }
 
                 //01插入并设置手报声光警报器
+                //2025-7-14 修改:删除I/O属性
                 if (row_Insert.ShengGuang >= 1)
                 {
 
                     Dictionary<string, string> atts = new Dictionary<string, string>
                     {
-                        { "IO", "1" },
+                        //{ "IO", "1" },
                         { "设备数量", row_Insert.ShengGuang.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_声光", ptBlk, InsertScale, 0, atts);
                     ptBlk = ptBlk.PolarPoint(0, blk_distance);
                     i++;
                 }
+
+                //01.5插入:广播模块
+                if (row_Insert.GuangBo >= 1)
+                {
+
+                    Dictionary<string, string> atts = new Dictionary<string, string>
+                    {
+                        { "IO", "1" },
+                        { "设备数量", "1" }
+                    };
+                    spaceid.InsertBlockReference(sInsertLayer, "FAS_广播", ptBlk, InsertScale, 0, atts);
+                    ptBlk = ptBlk.PolarPoint(0, blk_distance);
+                    i++;
+                }
+
 
                 //02插入并设置防火卷帘数量
                 if (row_Insert.JuanLianA >= 1)
@@ -155,6 +172,8 @@ namespace WeakCurrent1.Common
                         { "设备数量", row_Insert.ZYFJ.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_正压风机", ptBlk, InsertScale, 0, atts);
+                    //存在K线
+                    bKxian = true;
                     //K线的终点
                     ptKxian2 = ptBlk.PolarPoint(0, 500).PolarPoint((Math.PI / 2), 1450);
                     //指向下一个块的插入点
@@ -173,6 +192,8 @@ namespace WeakCurrent1.Common
                         { "设备数量", row_Insert.BFJ.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_补风机", ptBlk, InsertScale, 0, atts);
+                    //存在K线
+                    bKxian = true;
                     //K线的终点
                     ptKxian2 = ptBlk.PolarPoint(0, 500).PolarPoint((Math.PI / 2), 1450);
                     //指向下一个块的插入点
@@ -190,6 +211,8 @@ namespace WeakCurrent1.Common
                         { "设备数量", row_Insert.PYFJ.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_排烟风机", ptBlk, InsertScale, 0, atts);
+                    //存在K线
+                    bKxian = true;
                     //K线的终点
                     ptKxian2 = ptBlk.PolarPoint(0, 500).PolarPoint((Math.PI / 2), 1450);
                     //指向下一个块的插入点
@@ -208,6 +231,8 @@ namespace WeakCurrent1.Common
                         { "设备数量", row_Insert.XHSB.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_XHSB1", ptBlk, InsertScale, 0, atts);
+                    //存在K线
+                    bKxian = true;
                     //K线的终点
                     ptKxian2 = ptBlk.PolarPoint(0, 500).PolarPoint((Math.PI / 2), 1450);
                     //指向下一个块的插入点
@@ -225,6 +250,8 @@ namespace WeakCurrent1.Common
                         { "设备数量", row_Insert.PLB.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_PLB1", ptBlk, InsertScale, 0, atts);
+                    //存在K线
+                    bKxian = true;
                     //K线的终点
                     ptKxian2 = ptBlk.PolarPoint(0, 500).PolarPoint((Math.PI / 2), 1450);
                     //指向下一个块的插入点
@@ -232,19 +259,7 @@ namespace WeakCurrent1.Common
                     i++;
                 }
 
-                //10稳压泵 FAS_稳压泵
-                if (row_Insert.WYB >= 1)
-                {
-
-                    Dictionary<string, string> atts = new Dictionary<string, string>
-                    {
-                        { "IO", row_Insert.WYB.ToString() },
-                        { "设备数量", row_Insert.WYB.ToString() }
-                    };
-                    spaceid.InsertBlockReference(sInsertLayer, "FAS_稳压泵", ptBlk, InsertScale, 0, atts);
-                    ptBlk = ptBlk.PolarPoint(0, blk_distance2);
-                    i++;
-                }
+                
 
                 //11 BEC FAS_BEC
                 if (row_Insert.BEC >= 1)
@@ -342,6 +357,21 @@ namespace WeakCurrent1.Common
                     i++;
                 }
 
+                //稳压泵 FAS_稳压泵
+                //2025-8-12修改:依据张老师意见修改,每台泵5个i口,此项移至I/O设备后面
+                if (row_Insert.WYB >= 1)
+                {
+
+                    Dictionary<string, string> atts = new Dictionary<string, string>
+                    {
+                        { "IO", (5*row_Insert.WYB).ToString() },
+                        { "设备数量", row_Insert.WYB.ToString() }
+                    };
+                    spaceid.InsertBlockReference(sInsertLayer, "FAS_稳压泵", ptBlk, InsertScale, 0, atts);
+                    ptBlk = ptBlk.PolarPoint(0, blk_distance2);
+                    i++;
+                }
+
                 //16 70度防火阀 FAS_70度阀
                 if (row_Insert.Fa70 >= 1)
                 {
@@ -376,7 +406,7 @@ namespace WeakCurrent1.Common
 
                     Dictionary<string, string> atts = new Dictionary<string, string>
                     {
-                        { "IO", row_Insert.XinHaofa.ToString() },
+                        { "IO",(2* row_Insert.XinHaofa).ToString() },
                         { "设备数量", row_Insert.XinHaofa.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_水流+信号阀", ptBlk, InsertScale, 0, atts);
@@ -404,7 +434,7 @@ namespace WeakCurrent1.Common
 
                     Dictionary<string, string> atts = new Dictionary<string, string>
                     {
-                        { "IO", (2 *row_Insert.LiuLiangKG).ToString() },
+                        { "IO", (row_Insert.LiuLiangKG).ToString() },
                         { "设备数量", row_Insert.LiuLiangKG.ToString() }
                     };
                     spaceid.InsertBlockReference(sInsertLayer, "FAS_流量开关", ptBlk, InsertScale, 0, atts);
@@ -536,10 +566,11 @@ namespace WeakCurrent1.Common
                     i++;
                 }
 
-
-
-                //连接K线
-                if (ptKxian2.X > 300)
+                // 连接K线
+                // 计算两点间的欧氏距离
+                double distance_line = ptKxian1.DistanceTo(ptKxian2);
+                // 如果K线存在,且距离大于300，则绘制连接线
+                if (bKxian && distance_line > 300)
                 {
                     ARXTools.AddLine(db, ptKxian1, ptKxian2, "WIRE-照明");
                 }
@@ -691,7 +722,7 @@ namespace WeakCurrent1.Common
                 // 消防电话
                 XFDianHua = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002658" }),
                 // 楼层显示器
-                LouCengXSQ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002779" }),
+                LouCengXSQ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002779", "$EQUIP$00002778" }),
                 // 短路隔离器
                 SI = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002776" }),
                 // 消火栓
@@ -707,15 +738,15 @@ namespace WeakCurrent1.Common
                 // 湿式报警阀组
                 ShiShiBJF = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00003103" }),
                 // 消火栓泵
-                XHSB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000178(SY3SUNZM)", "$EQUIP_U$00000178(SZM-PC)" }),
+                XHSB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000178(SY3SUNZM)", "$EQUIP_U$00000178(SZM-PC)", "FAS_消火栓泵1" }),
                 // 喷淋泵
-                PLB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000179(SY3SUNZM)", "$EQUIP_U$00000179(SZM-PC)" }),
+                PLB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000179(SY3SUNZM)", "$EQUIP_U$00000179(SZM-PC)" , "FAS_喷淋泵1" }),
                 // 稳压泵
-                WYB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000180(SY3SUNZM)", "$EQUIP_U$00000180(SZM-PC)" }),
+                WYB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000180(SY3SUNZM)", "$EQUIP_U$00000180(SZM-PC)", "FAS_稳压泵1" }),
                 // GP 楼梯间正压送风口
-                GP = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00003100", "FASPM-GP1", "FASPM-GP2" }),
+                GP = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00003100", "FASPM-GP1", "FASPM-GP2", "$EQUIP$00003098" }),
                 // 挡烟垂壁
-                DYCB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000141(SY3SUNZM)", "$EQUIP_U$00000184(SY3SUNZM)", "$EQUIP_U$00000141(SZM-PC)", "$EQUIP_U$00000184(SZM-PC)" }),
+                DYCB = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000141(SY3SUNZM)", "$EQUIP_U$00000184(SY3SUNZM)", "$EQUIP_U$00000141(SZM-PC)", "$EQUIP_U$00000184(SZM-PC)", "$EQUIP_U$00000081(DESKTOP-98GAJR8)" }),
                 // 正压风机
                 ZYFJ = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000182(SY3SUNZM)", "$EQUIP_U$00000161(SY3SUNZM)", "$EQUIP_U$00000182(SZM-PC)", "$EQUIP_U$00000161(SZM-PC)" }),
                 // 消防补风机
@@ -729,7 +760,7 @@ namespace WeakCurrent1.Common
                 //BEEH 280℃动作的常开排烟阀
                 BEEH = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002403", "FASPM-BEEH1" }),
                 //BECH 
-                BECH = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002413", "FASPM-BECH1", "FASPM-BECH2" }),
+                BECH = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002413", "FASPM-BECH1", "FASPM-BECH2", "$EQUIP$00002404" }),
                 //70度防火阀
                 Fa70 = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002859", "FASPM-70度防火阀1" }),
                 //280度防火阀
@@ -753,12 +784,12 @@ namespace WeakCurrent1.Common
             //待修正：火灾报警点位统计
             fas.DianWeiall = fas.ShouBao + fas.ShengGuang + 2 * fas.JuanLianA + fas.QieFei + fas.DianTi + fas.YanGan + fas.WenGan + fas.EXWenGan +
                 +fas.XiaoHuoShuan + fas.YaLiKG + fas.LiuLiangKG + fas.ShuiLiuZSQ + fas.XinHaofa +
-                3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + fas.WYB + fas.GP + 1 * fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC
+                3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + 5*fas.WYB + fas.GP + 1 * fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC
                 + fas.BED +  fas.BEEH +  fas.BECH + fas.Fa70 + fas.Fa280 + fas.B + fas.PaiYanchuang + 2 * fas.XXGSYanGan;
             //联动点位数量
             fas.DianWeiliandong = 2 * fas.JuanLianA + fas.QieFei + fas.DianTi
                  + fas.YaLiKG + fas.LiuLiangKG + fas.ShuiLiuZSQ + fas.XinHaofa +
-                3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + fas.WYB + fas.GP + fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC
+                3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + 5*fas.WYB + fas.GP + fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC
                 + fas.BED + fas.BEEH + 2*fas.BECH + fas.Fa70 + fas.Fa280 + fas.B + fas.PaiYanchuang+fas.XXGSYanGan;
             //回路数量
             fas.HuiLu = (int)Math.Max(Math.Ceiling((decimal)(fas.DianWeiall / 180.00)),

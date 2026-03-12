@@ -45,7 +45,7 @@ namespace WeakCurrent1
             ed = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
 
             //首先尝试从默认位置导入外部图块,导入成功后再导入计算书
-            string fileDwgBlk = @"D:\Mycode\BlkDYPD\BlkFAS.dwg";
+            string fileDwgBlk = @"D:\Mycode\BlkDYPD\BlkFAS_t3.dwg";
             if (FasPage.ImportBlocksFromDwg_RD(db, fileDwgBlk))
             {
                 uiLabel1.Text="图块导入成功";
