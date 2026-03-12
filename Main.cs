@@ -211,7 +211,8 @@ namespace WeakCurrent1
         public int YuLiu3 { get; set; }  //预留3
         public int YuLiu4 { get; set; }  //预留4
         public int YuLiu5 { get; set; }  //预留5
-
+        public int Mjfas { get; set; }  //门禁
+                                     
         public FASJiSuanshuExcel()
         {
             gmt_change = ""; // 初始化为""

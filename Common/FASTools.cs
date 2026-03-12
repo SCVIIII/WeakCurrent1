@@ -648,7 +648,8 @@ namespace WeakCurrent1.Common
 
                 GuangBo = fas1.GuangBo + fas2.GuangBo,
                 RD = fas1.RD + fas2.RD,
-                RDK = fas1.RDK + fas2.RDK
+                RDK = fas1.RDK + fas2.RDK,
+                Mjfas = fas1.Mjfas + fas2.Mjfas,
 
 
             };
@@ -777,7 +778,8 @@ namespace WeakCurrent1.Common
                 RD = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP$00002771", "A$C54AB6E89", "$EQUIP_U$00000081(SY3SUNZM)" }),
                 //常开防火门监控模块
                 RDK = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000126(SY3SUNZM)", "$EQUIP_U$00000126(SZM-PC)" }),
-
+                //门禁切除
+                Mjfas = MyTools.count_Blks_Num(num_blks, new List<string> { "$EQUIP_U$00000082(DESKTOP-98GAJR8)" })
             }; //end of  fas
 
             //fas.DianWeiall等于以上所有属性数量总和
@@ -785,12 +787,12 @@ namespace WeakCurrent1.Common
             fas.DianWeiall = fas.ShouBao + fas.ShengGuang + 2 * fas.JuanLianA + fas.QieFei + fas.DianTi + fas.YanGan + fas.WenGan + fas.EXWenGan +
                 +fas.XiaoHuoShuan + fas.YaLiKG + fas.LiuLiangKG + fas.ShuiLiuZSQ + fas.XinHaofa +
                 3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + 5*fas.WYB + fas.GP + 1 * fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC
-                + fas.BED +  fas.BEEH +  fas.BECH + fas.Fa70 + fas.Fa280 + fas.B + fas.PaiYanchuang + 2 * fas.XXGSYanGan;
+                + fas.BED +  fas.BEEH +  fas.BECH + fas.Fa70 + fas.Fa280 + fas.B + fas.PaiYanchuang + 2 * fas.XXGSYanGan+fas.Mjfas;
             //联动点位数量
             fas.DianWeiliandong = 2 * fas.JuanLianA + fas.QieFei + fas.DianTi
                  + fas.YaLiKG + fas.LiuLiangKG + fas.ShuiLiuZSQ + fas.XinHaofa +
                 3 * fas.ShiShiBJF + 8 * fas.XHSB + 8 * fas.PLB + 5*fas.WYB + fas.GP + fas.DYCB + 6 * fas.ZYFJ + 6 * fas.BFJ + 6 * fas.PYFJ + fas.BEC
-                + fas.BED + fas.BEEH + 2*fas.BECH + fas.Fa70 + fas.Fa280 + fas.B + fas.PaiYanchuang+fas.XXGSYanGan;
+                + fas.BED + fas.BEEH + 2*fas.BECH + fas.Fa70 + fas.Fa280 + fas.B + fas.PaiYanchuang+fas.XXGSYanGan + fas.Mjfas;
             //回路数量
             fas.HuiLu = (int)Math.Max(Math.Ceiling((decimal)(fas.DianWeiall / 180.00)),
                                           Math.Ceiling((decimal)(fas.DianWeiliandong / 90.00)));

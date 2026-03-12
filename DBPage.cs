@@ -142,6 +142,7 @@ namespace WeakCurrent1
                         GuangBo INTEGER DEFAULT 0,
                         RD INTEGER DEFAULT 0,
                         RDK INTEGER DEFAULT 0,
+                        MJFAS INTEGER DEFAULT 0,
                         UNIQUE (Id_Dianjing),
                         UNIQUE (IdKey)
                     );";
